@@ -1,0 +1,40 @@
+# --- Python ---------------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+
+# --- Logs -------------------------------------------------------------------
+# platform-context-engine writes to LOG_FILE (default /tmp); any log set inside the repo stays out
+*.log
+
+# --- Terraform --------------------------------------------------------------
+# Provider binaries downloaded by `terraform init`
+.terraform/
+# Local state and plans (state can contain secrets)
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# Keep .terraform.lock.hcl tracked: it pins provider versions.
+# environments/*.tfvars are generated from Design Tokens and are meant to be committed.
+
+# --- Secrets ----------------------------------------------------------------
+# Tokens live in ~/.kiro/.env, outside the repo. .kiro/settings/mcp.json only references
+# them (no secrets) and is committed.
+.env
+.env.*
+
+# --- Backups and editor/OS noise -------------------------------------------
+*.bak
+*.bak-*
+*.broken-*
+.DS_Store
+.idea/
+.vscode/
