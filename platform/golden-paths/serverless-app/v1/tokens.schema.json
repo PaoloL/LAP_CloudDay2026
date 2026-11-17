@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "compute/serverless-app tokens (AWS Lambda + API Gateway HTTP API)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "function",
+    "api"
+  ],
+  "properties": {
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "architecture",
+        "timeout_seconds",
+        "memory_mb",
+        "tracing_mode",
+        "log_retention_days"
+      ],
+      "properties": {
+        "runtime": {
+          "type": "string",
+          "pattern": "^(python|nodejs)[0-9.x]+$"
+        },
+        "architecture": {
+          "enum": [
+            "arm64",
+            "x86_64"
+          ]
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 900
+        },
+        "memory_mb": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "properties": {
+            "small": {
+              "$ref": "#/$defs/memory"
+            },
+            "medium": {
+              "$ref": "#/$defs/memory"
+            },
+            "large": {
+              "$ref": "#/$defs/memory"
+            }
+          }
+        },
+        "tracing_mode": {
+          "enum": [
+            "Active",
+            "PassThrough"
+          ]
+        },
+        "log_retention_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "api": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "throttling_burst_limit",
+        "throttling_rate_limit",
+        "jwt_issuer",
+        "jwt_audience",
+        "access_log_retention_days"
+      ],
+      "properties": {
+        "throttling_burst_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "throttling_rate_limit": {
+          "type": "number",
+          "minimum": 1
+        },
+        "jwt_issuer": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "jwt_audience": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "access_log_retention_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "memory": {
+      "type": "integer",
+      "minimum": 128,
+      "maximum": 10240
+    }
+  }
+}

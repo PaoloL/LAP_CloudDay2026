@@ -1,0 +1,4 @@
+default_tags:
+  Environment: "prod"
+  CostCenter: "Fleet-Core-Prod"
+  ComplianceScope: "pci-dss"

@@ -1,0 +1,27 @@
+# Who approves what. Replace the placeholder teams with the real ones of your GitHub organisation.
+
+# Golden paths: contracts, synthesis patterns, token schemas (contract extension process)
+/platform/golden-paths/                       @acme/platform-team
+/platform/tools/                              @acme/platform-team
+/platform/mcp/                                @acme/platform-team
+/.kiro/                                       @acme/platform-team
+/powers/                                      @acme/platform-team
+
+# Design Tokens: values per domain
+/platform/tokens/_org/                        @acme/platform-team @acme/security
+/platform/tokens/*/network.yaml               @acme/network
+/platform/tokens/*/security.yaml              @acme/security
+/platform/tokens/*/governance.yaml            @acme/platform-team @acme/finops
+/platform/tokens/*/compute/                   @acme/platform-team
+/platform/tokens/prod/                        @acme/platform-team @acme/security
+
+# Policy-as-code (the Validate gate): Security approves, the generator never edits it
+/policy/                                      @acme/security @acme/platform-team
+/platform/tools/export_tokens.py              @acme/security @acme/platform-team
+
+# Intents and generated code: owning service team + platform
+/intents/garage-management/                   @acme/team-fleet @acme/platform-team
+/terraform/garage-management/                 @acme/team-fleet @acme/platform-team
+/intents/garage-serverless/                   @acme/team-fleet @acme/platform-team
+/terraform/garage-serverless/                 @acme/team-fleet @acme/platform-team
+/tests/demo/                                  @acme/platform-team

@@ -1,0 +1,3 @@
+default_tags:
+  Environment: "dev"
+  CostCenter: "Fleet-Engineering-Dev"

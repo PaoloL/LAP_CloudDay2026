@@ -1,0 +1,13 @@
+# ECS Fargate
+fargate_profiles:
+  small:
+    cpu: "512"      # 0.5 vCPU (guaranteed minimum for prod)
+    memory: "1024"  # 1 GB
+  medium:
+    cpu: "1024"
+    memory: "2048"
+  large:
+    cpu: "2048"
+    memory: "4096"
+desired_count: 2    # At least 2 instances for HA
+assign_public_ip: false

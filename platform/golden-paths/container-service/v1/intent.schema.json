@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acme.example/golden-paths/container-service/v1/intent.schema.json",
+  "title": "Intent ContainerService v1",
+  "description": "Containerised service on ECS Fargate, with optional HTTP API, DynamoDB table and S3 bucket. Every 'default' is the most conservative choice.",
+  "$ref": "https://acme.example/golden-paths/_common/intent-common.schema.json",
+  "unevaluatedProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "intent.acme.io/v1"
+    },
+    "kind": {
+      "const": "ContainerService"
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exposure",
+        "api",
+        "compute",
+        "storage"
+      ],
+      "properties": {
+        "exposure": {
+          "description": "'public' is a security choice that must be confirmed explicitly.",
+          "type": "string",
+          "enum": [
+            "public",
+            "internal"
+          ],
+          "default": "internal"
+        },
+        "api": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "routes"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "http",
+                "none"
+              ],
+              "default": "http"
+            },
+            "routes": {
+              "description": "REST endpoints '<METHOD> <path>', path parameters in snake_case between braces.",
+              "type": "array",
+              "uniqueItems": true,
+              "default": [],
+              "items": {
+                "type": "string",
+                "pattern": "^(GET|POST|PUT|PATCH|DELETE) (/[a-z0-9_-]+|/\\{[a-z][a-z0-9_]*\\})+$"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "type": {
+                "const": "none"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "routes": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "routes": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        "compute": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "size",
+            "port"
+          ],
+          "properties": {
+            "size": {
+              "description": "Fargate profile: cpu and memory come from the environment's compute/container-service tokens.",
+              "type": "string",
+              "enum": [
+                "small",
+                "medium",
+                "large"
+              ],
+              "default": "small"
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "default": 8080
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "nosql",
+            "blob"
+          ],
+          "properties": {
+            "nosql": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "enabled",
+                "table_name",
+                "partition_key",
+                "sort_key"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "table_name": {
+                  "type": "string",
+                  "default": ""
+                },
+                "partition_key": {
+                  "type": "string",
+                  "default": ""
+                },
+                "sort_key": {
+                  "description": "Empty if the table has no sort key.",
+                  "type": "string",
+                  "default": ""
+                }
+              },
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "table_name": {
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  },
+                  "partition_key": {
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "blob": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "enabled",
+                "purpose"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "purpose": {
+                  "description": "Purpose of the bucket in kebab-case, e.g. 'vehicle-photos'.",
+                  "type": "string",
+                  "default": ""
+                }
+              },
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "purpose": {
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

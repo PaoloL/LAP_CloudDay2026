@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "compute/container-service tokens (ECS Fargate)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fargate_profiles",
+    "desired_count",
+    "assign_public_ip"
+  ],
+  "properties": {
+    "fargate_profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "properties": {
+        "small": {
+          "$ref": "#/$defs/profile"
+        },
+        "medium": {
+          "$ref": "#/$defs/profile"
+        },
+        "large": {
+          "$ref": "#/$defs/profile"
+        }
+      }
+    },
+    "desired_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "assign_public_ip": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cpu",
+        "memory"
+      ],
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        "memory": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        }
+      }
+    }
+  }
+}

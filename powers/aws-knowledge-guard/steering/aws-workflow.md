@@ -1,27 +1,26 @@
-# AWS: workflow anti-knowledge-cutoff in progettazione
+# AWS: anti-knowledge-cutoff workflow during design
 
-## Regioni
-- Usa `list_regions` per gli identificativi corretti, non la memoria.
-- Prima di usare un servizio, una funzionalita' o una risorsa CloudFormation in una regione:
-  `get_regional_availability`.
-- Se non e' disponibile, proponi alternative e chiedi conferma.
+## Regions
+- Use `list_regions` for the correct identifiers, not memory.
+- Before using a service, feature or CloudFormation resource in a Region: `get_regional_availability`.
+- If it is not available, propose alternatives and ask for confirmation.
 
-## Limiti e quote
-- Cerca i limiti con `search_documentation` (es. "Fargate service quotas", "API Gateway HTTP API quotas")
-  e leggi la pagina "Quotas" o "Limits" del servizio con `read_documentation`.
-- Questi sono i valori **predefiniti**: il valore applicato all'account puo' essere diverso. Dillo all'utente e,
-  se il limite e' critico, suggerisci di controllarlo in Service Quotas.
+## Limits and quotas
+- Look up limits with `search_documentation` (e.g. "Fargate service quotas", "API Gateway HTTP API quotas")
+  and read the service's "Quotas" or "Limits" page with `read_documentation`.
+- These are **default** values: the value applied to the account may differ. Tell the user and, if the limit is
+  critical, suggest checking it in Service Quotas.
 
-## ARN e policy IAM
-- Per il formato degli ARN cerca la pagina "Actions, resources, and condition keys" del servizio
-  (`search_documentation` + `read_documentation`) e usa i formati riportati li'.
-- In Terraform preferisci i riferimenti (`aws_x.y.arn`) a stringhe costruite a mano.
-- Nelle policy IAM non usare `Resource: "*"` se il formato ARN consente di restringere.
+## ARNs and IAM policies
+- For ARN formats, find the service's "Actions, resources, and condition keys" page
+  (`search_documentation` + `read_documentation`) and use the formats listed there.
+- In Terraform prefer references (`aws_x.y.arn`) to hand-built strings.
+- In IAM policies do not use `Resource: "*"` when the ARN format allows narrowing it.
 
-## Best practice
-- Per scelte di architettura (sicurezza, affidabilita', costi) cerca la guida Well-Architected o la
-  documentazione del servizio e cita la pagina usata.
+## Best practices
+- For architecture choices (security, reliability, cost) look up the Well-Architected guidance or the service
+  documentation and cite the page used.
 
-## Cosa riportare
-- Pagine consultate (URL) per ogni decisione.
-- Cosa e' un valore predefinito documentato e non un dato verificato sull'account.
+## What to report
+- Pages consulted (URL) for each decision.
+- What is a documented default value and not a value verified on the account.

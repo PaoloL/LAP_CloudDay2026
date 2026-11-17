@@ -1,0 +1,17 @@
+# AWS Lambda + API Gateway HTTP API (golden path serverless-app/v1)
+function:
+  runtime: "python3.13"        # verified at runtime with aws-knowledge-guard: supported and not deprecated
+  architecture: "arm64"        # Graviton
+  timeout_seconds: 10
+  memory_mb:
+    small: 128
+    medium: 256
+    large: 512
+  tracing_mode: "PassThrough"
+  log_retention_days: 30
+api:
+  throttling_burst_limit: 50
+  throttling_rate_limit: 20
+  jwt_issuer: "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_AcmeDev01"
+  jwt_audience: ["acme-api-clients-dev"]
+  access_log_retention_days: 30

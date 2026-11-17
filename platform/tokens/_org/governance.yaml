@@ -1,0 +1,5 @@
+# Company-wide values shared by all environments. Each environment extends or overrides them.
+naming_mask: "acme-{environment}-{service_name}-{resource_suffix}"
+default_tags:
+  Organization: "AcmeCorp"
+  ManagedBy: "Kiro-IaI"

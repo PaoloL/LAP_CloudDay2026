@@ -1,0 +1,13 @@
+# ECS Fargate
+fargate_profiles:
+  small:
+    cpu: "256"      # 0.25 vCPU
+    memory: "512"   # 512 MB
+  medium:
+    cpu: "512"
+    memory: "1024"
+  large:
+    cpu: "1024"
+    memory: "2048"
+desired_count: 1
+assign_public_ip: false

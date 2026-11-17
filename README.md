@@ -1,30 +1,48 @@
-# LAP_CloudDay2026 — Spec-driven AWS infrastructure with Kiro
+# LAP_CloudDay2026 — Infrastructure as Intent with Kiro
 
-Demo workspace for AWS CloudDay 2026. It shows how Kiro turns a short **intent file** into AWS Terraform,
-using **steering rules** for company conventions, a **Design Tokens MCP server** for per-environment values,
-and two **Kiro Powers** that fight the model's knowledge cutoff by reading official sources at runtime
-through **remote MCP servers**:
+Demo workspace for AWS CloudDay 2026. It shows how Kiro turns a short **intent** into AWS Terraform in two phases:
 
-- `terraform-knowledge-guard`: real `hashicorp/aws` syntax and deprecations, from the Terraform Registry.
-- `aws-knowledge-guard`: new AWS services and features, What's New, docs and regional availability.
+- **Phase 0 — Intent Contract (Semantic Negotiation):** the request becomes a validated intent that follows the
+  contract of a **golden path**.
+- **Phase 1 — DNA Synthesis (Native, Constraint-Driven Generation):** the intent becomes primitive Terraform,
+  driven by the golden path's synthesis pattern, the **Design Tokens** of the environment and two **Kiro Powers**
+  that read official sources at runtime through remote MCP servers:
+  - `terraform-knowledge-guard`: real `hashicorp/aws` syntax and deprecations, from the Terraform Registry.
+  - `aws-knowledge-guard`: new AWS services and features, What's New, docs and regional availability.
 
-The example service is `garage-management`: an HTTP API on API Gateway, backed by ECS Fargate,
-DynamoDB and S3.
+Example intents: `garage-management` (`ContainerService`: API Gateway, ECS Fargate, DynamoDB, S3) and an EKS
+cluster example (`KubernetesCluster`, alpha).
 
 ## Workflow
 
 ```
-1. Intent      user request ──► .kiro/templates/intent.template.md ──► infra-intent.md
-                                (steering 00-phase0-intent.md)
+0. Intent      request ──► golden path <kind>/<version>/intent.schema.json ──► intents/<name>/<env>.md
+               (steering 00-phase0-intent.md)            validated by platform/tools/validate.py
 
-2. Synthesis   infra-intent.md ──► terraform/*.tf
-                                    ▲  steering 01-phase1-synthesis.md       patterns, naming, provider ~> 5.0
-                                    ▲  MCP platform-context-engine (local)    design tokens per environment
-                                    ▲  power terraform-knowledge-guard        Registry docs: arguments, deprecations
-                                    ▲  power aws-knowledge-guard              AWS docs, What's New, regions
+1. Synthesis   intents/<name>/<env>.md   ──► spec .kiro/specs/<name>-<env>/ (requirements → design → tasks) ──► terraform/<name>/*.tf
+                   ▲  steering 01-phase1-synthesis.md       common rules: no modules, naming, validation
+                   ▲  golden path synthesis.md + building blocks   pattern of the kind
+                   ▲  MCP platform-context-engine (local)    read_design_tokens(domain, env, kind)
+                   ▲  power terraform-knowledge-guard        Registry docs: arguments, deprecations
+                   ▲  power aws-knowledge-guard              AWS docs, What's New, regions
 
-3. Validate    terraform fmt -check && terraform validate
+2. Validate    terraform plan ──► terraform show -json ──► tfplan.json ──► conftest test -p policy/ --data tokens
+                   ▲  policy/*.rego (Security owns them)    deterministic: deny + reasons back to Kiro
+                   ▲  platform/tools/export_tokens.py       the same Design Tokens that fed generation
 ```
+
+## Organising principle
+
+**What changes together lives together; what has different owners lives apart.**
+
+- A **golden path** (`platform/golden-paths/<kind>/<version>/`) packages everything that evolves in the same PR:
+  intent schema, token schema, synthesis pattern, examples, changelog.
+- **Design Tokens** (`platform/tokens/`) are organised by environment and domain, because values are owned by
+  different teams (network, security, FinOps, platform) and change at a different pace.
+- **Intents** (`intents/<name>/<env>.md`) and **generated code** (`terraform/<name>/`) belong to the service
+  team, one folder and one Terraform state per intent.
+
+Ownership is enforced with `.github/CODEOWNERS`.
 
 ## Folder structure
 
@@ -32,54 +50,135 @@ DynamoDB and S3.
 LAP_CloudDay2026/
 ├── README.md
 ├── .gitignore
-├── infra-intent.md                     Intent for the garage-management service (filled from the template)
-├── .kiro/                              Kiro workspace configuration
+├── .github/CODEOWNERS                  Who approves which folder
+├── .kiro/
 │   ├── settings/mcp.json               MCP servers Kiro connects to in this workspace
-│   ├── steering/                       Rules Kiro always applies in this workspace
-│   │   ├── 00-phase0-intent.md         Phase 0: capture the request into infra-intent.md, no .tf yet
-│   │   ├── 01-phase1-synthesis.md      Phase 1: generate primitive aws_* resources, patterns and naming
-│   │   └── 02-mcp-design-tokens.md     Phase 1b: environment values only from the Design Tokens server
-│   ├── templates/
-│   │   └── intent.template.md          Schema and conservative defaults for infra-intent.md
-│   └── specs/garage-app/               Kiro spec: parameterise Terraform and add a dev environment
-│       ├── requirements.md
-│       ├── design.md
-│       └── tasks.md
-├── platform/                           "Platform team" assets
-│   ├── mcp/
-│   │   ├── server.py                   Local MCP server "platform-context-engine" (read_design_tokens)
-│   │   └── requirements.txt
-│   └── tokens/                         Design Tokens: company values per environment
-│       ├── dev.yaml
-│       └── prd.yaml                    Used when environment = prod
+│   ├── steering/                       Always loaded, short and common to every kind
+│   │   ├── 00-phase0-intent.md         Phase 0: pick the golden path, fill and validate the intent, ask confirmation
+│   │   ├── 01-phase1-synthesis.md      Phase 1: load the kind's pattern, common rules, output folder, validation
+│   │   └── 02-mcp-design-tokens.md     Values only from read_design_tokens
+│   └── specs/                          One Phase 1 spec per intent (<name>-<env>); garage-app is the reference
+├── intents/                            One intent per service and environment
+│   └── garage-management/
+│       └── prod.md                     ContainerService v1, prod (Markdown + YAML frontmatter)
+├── platform/                           Platform team assets
+│   ├── golden-paths/
+│   │   ├── _common/
+│   │   │   ├── intent-common.schema.json   apiVersion, kind, metadata (name, environment, owner)
+│   │   │   ├── tokens/*.schema.json        Schemas of the shared token domains
+│   │   │   └── building-blocks/            Patterns reused by several kinds (s3-bucket, dynamodb-table, http-api,
+│   │   │                                   lambda-function, http-api-lambda)
+│   │   ├── container-service/          ECS Fargate
+│   │   │   ├── CHANGELOG.md
+│   │   │   └── v1/                     intent.schema.json, tokens.schema.json, synthesis.md, examples/
+│   │   ├── kubernetes-cluster/         Amazon EKS
+│   │   │   ├── CHANGELOG.md
+│   │   │   └── v1alpha1/               intent.schema.json, tokens.schema.json, synthesis.md, examples/
+│   │   └── serverless-app/             S3 + DynamoDB + Lambda + HTTP API (the demo)
+│   │       ├── CHANGELOG.md
+│   │       └── v1/                     intent.schema.json, tokens.schema.json, synthesis.md, examples/
+│   ├── tokens/
+│   │   ├── _org/                       Company-wide values (naming mask, base tags, TLS policy)
+│   │   ├── dev/                        network, security, storage, governance + compute/<kind>.yaml
+│   │   └── prod/                       same layout (no kubernetes-cluster: alpha is dev only)
+│   ├── tools/validate.py               Validates intents, golden path examples and tokens; exit 1 on error
+│   ├── tools/export_tokens.py          Merged Design Tokens of one environment as JSON, for Conftest --data
+│   └── mcp/                            Local MCP server "platform-context-engine" (read_design_tokens)
 ├── powers/                             Kiro Powers: configuration and instructions only, no code
-│   ├── terraform-knowledge-guard/
-│   │   ├── POWER.md                    Metadata, onboarding (HCP token), tools, behaviour rules
-│   │   ├── mcp.json                    Remote server: https://mcp.terraform.io/mcp
-│   │   └── steering/
-│   │       └── terraform-workflow.md   Provider version → Registry docs per resource → deprecations → validate
-│   └── aws-knowledge-guard/
-│       ├── POWER.md                    Metadata, tools, behaviour rules
-│       ├── mcp.json                    Remote server: https://knowledge-mcp.global.api.aws
-│       └── steering/
-│           ├── new-features-check.md   Recent announcements, impact on the design, region, Terraform support
-│           └── aws-workflow.md         Regions, documented quotas, ARN formats, best practices
-└── terraform/                          Generated infrastructure for garage-management (demo output)
-    ├── versions.tf                     Terraform >= 1.5, hashicorp/aws ~> 5.0, provider + default tags
-    ├── variables.tf                    container_image, acm_certificate_arn, alb_internal_domain_name, log_retention_days
-    ├── locals.tf                       Naming prefix, environment values (today: prod values)
-    ├── network.tf                      Internal ALB, listener, target group, security groups
-    ├── apigw.tf                        HTTP API, VPC link, integration, routes, stage, access logs
-    ├── ecs.tf                          ECS cluster, Fargate task definition and service, logs
-    ├── dynamodb.tf                     DynamoDB table
-    ├── s3.tf                           Photos bucket: public access block, KMS encryption, versioning, logging
-    ├── iam.tf                          Task and execution roles and policies
-    ├── outputs.tf                      api_endpoint, photos_bucket_name, dynamodb_table_name, ecs_cluster_name
-    └── .terraform.lock.hcl             Pinned provider version (hashicorp/aws 5.100.0)
+│   ├── terraform-knowledge-guard/      POWER.md, mcp.json (remote https://mcp.terraform.io/mcp), steering/
+│   └── aws-knowledge-guard/            POWER.md, mcp.json (remote https://knowledge-mcp.global.api.aws), steering/
+├── policy/                             The Validate gate: Rego v1 for Conftest (s3, tags, dynamodb, lambda, apigw)
+│   └── policy_test.rego                Unit tests: opa test policy
+├── tests/
+│   ├── intent/TEST-PLAN.md             Test plan for Phase 0 and Phase 1
+│   ├── demo/                           CloudDay demo: Test 01–05 (prompt, expected intent, DNA synthesis), runbook
+│   └── policy/fixtures/                Plan JSON of Test 01: pass and deny (KMS key)
+└── terraform/
+    └── garage-management/              Generated infrastructure (prod values in locals.tf today)
+        ├── versions.tf, variables.tf, locals.tf
+        ├── network.tf, apigw.tf, ecs.tf, iam.tf
+        ├── dynamodb.tf, s3.tf, outputs.tf
+        └── .terraform.lock.hcl         Pinned provider version (hashicorp/aws 5.100.0)
 ```
 
-Not committed: `.venv/` (Python environment for `platform-context-engine`) and `terraform/.terraform/`
-(provider downloaded by `terraform init`).
+Not committed: `.venv/` (Python environment for the local tools) and `.terraform/` folders.
+
+## Intent contract
+
+An intent is a Markdown file with YAML frontmatter, `intents/<name>/<env>.md`. Humans and LLMs read the same
+file: the frontmatter is for machines, the prose is for intent, and both are reviewed in the same pull request.
+
+```markdown
+---
+apiVersion: intent.acme.io/v1        # contract version of the kind
+kind: ContainerService               # ContainerService | KubernetesCluster
+metadata:
+  name: garage-management            # = intents/<name>/ and terraform/<name>/
+  environment: prod                  # dev | staging | prod = file name and token folder
+  owner: team-fleet                  # team that approves changes
+spec: { ... }                        # defined by the kind's schema
+---
+
+# garage-management · prod
+
+## Request
+Public HTTP API to manage garages, cars and motorcycles ...
+
+## Decisions
+| Field | Value | Source | Rationale |
+| :--- | :--- | :--- | :--- |
+| `spec.exposure` | `public` | confirmed | Explicit security choice, confirmed by the owner. ... |
+| `spec.compute.size` | `small` | default | The request says nothing about load: conservative schema default. |
+```
+
+- **Frontmatter**: only `apiVersion`, `kind`, `metadata`, `spec`, validated by the golden path's JSON Schema.
+- **`## Request`**: the request in natural language: what, not how.
+- **`## Decisions`**: the living ADR of the intent. One row per field set; `Field` is the dotted path in the
+  frontmatter, `Source` is `request`, `default`, `confirmed` or `platform`.
+
+| kind | apiVersion | Golden path | Status |
+| :--- | :--- | :--- | :--- |
+| `ContainerService` | `intent.acme.io/v1` | `container-service/v1` (ECS Fargate, HTTP API, DynamoDB, S3) | stable |
+| `KubernetesCluster` | `intent.acme.io/v1alpha1` | `kubernetes-cluster/v1alpha1` (EKS) | alpha: dev only |
+| `ServerlessApplication` | `intent.acme.io/v1` | `serverless-app/v1` (S3, DynamoDB, Lambda, HTTP API; each optional) | stable: the CloudDay demo |
+
+Rules enforced by the schemas: no extra keys anywhere, enums with a conservative `default`, conditional fields
+(e.g. an enabled bucket needs a `purpose`), alpha/beta versions only in `dev`.
+
+Validate locally or in CI:
+
+```bash
+.venv/bin/python platform/tools/validate.py                       # all intents, examples and tokens
+.venv/bin/python platform/tools/validate.py intents/x/dev.md      # one intent
+```
+
+Besides the schemas, the validator checks that the file has a frontmatter, a `## Request` and a `## Decisions`
+section, that every decision names a field that exists in the frontmatter with an allowed `Source`, that the path matches `metadata`, that tokens exist for the intent's
+environment and kind, and that `single_az_zone` exists in the EKS node subnets.
+
+### Extending the contract (platform team PR)
+
+A new capability (a new kind, version or field) is a PR on `platform/golden-paths/` that contains, together:
+
+1. the intent schema (new version folder for breaking changes; `v1alpha1` → `v1beta1` → `v1`);
+2. the synthesis pattern (`synthesis.md`, reusing building blocks where possible);
+3. the token schema and token values at least for `dev`;
+4. golden examples in `examples/` (and, as CI grows, policy-as-code checks);
+5. a `CHANGELOG.md` entry.
+
+CI runs `platform/tools/validate.py`: every existing intent must still validate. CODEOWNERS requires the platform
+team, plus Security when network, encryption or exposure change.
+
+## Design Tokens
+
+```
+platform/tokens/_org/<domain>.yaml  ──merge──►  platform/tokens/<env>/<domain>.yaml        (network, security, storage, governance)
+                                                platform/tokens/<env>/compute/<kind>.yaml  (container-service, kubernetes-cluster)
+```
+
+- Each value lives in one place; environment files override company-wide ones.
+- Subnets are described per tier and per AZ (`private_app: {eu-west-1a: subnet-…}`), so patterns can choose AZs.
+- Token schemas live with the golden paths and are checked by the validator.
 
 ## Components
 
@@ -87,15 +186,15 @@ Not committed: `.venv/` (Python environment for `platform-context-engine`) and `
 
 | File | What it enforces |
 | :--- | :--- |
-| `00-phase0-intent.md` | Do not write `.tf` files yet. Fill `intent.template.md` from the request, use conservative defaults for missing fields, write `infra-intent.md`. |
-| `01-phase1-synthesis.md` | Primitive provider resources only, no community modules. Per-service patterns (S3 public access block + KMS, DynamoDB on-demand + encryption, Fargate in private subnets without public IP, HTTP API with VPC link). Naming: `acme-{environment}-{service_name}-{suffix}`. |
-| `02-mcp-design-tokens.md` | Read environment values only through `read_design_tokens`, never by opening `platform/tokens/*.yaml` directly. `prod` maps to `prd.yaml`. Provider schema comes from `terraform-knowledge-guard`. |
+| `00-phase0-intent.md` | No `.tf` yet. Pick the golden path, fill `metadata`/`spec` from the request with schema defaults, explain platform constraints (e.g. EKS needs two AZs) instead of forcing them, write `intents/<name>/<env>.md` with frontmatter, `## Request` and `## Decisions` (change only requested fields and their decisions if it exists), validate, ask for confirmation. |
+| `01-phase1-synthesis.md` | Spec-driven: after confirmation create `.kiro/specs/<name>-<env>/` (requirements → design → tasks, approval after each) and write Terraform only while executing tasks. Load the kind's `synthesis.md` and building blocks; primitive resources only; values from tokens; Registry and AWS checks through the powers; naming from `governance.naming_mask`; write only to `terraform/<name>/`; `terraform validate`; report. |
+| `02-mcp-design-tokens.md` | Read values only through `read_design_tokens(domain, environment, kind)`, never by opening `platform/tokens/`. Stop on `error`. |
 
 ### MCP server `platform-context-engine` (`platform/mcp/`, local)
 
 | Tool | Purpose |
 | :--- | :--- |
-| `read_design_tokens(domain, environment)` | Returns values from `platform/tokens/<env>.yaml` for one domain: `network`, `security`, `compute`, `storage`, `governance`. |
+| `read_design_tokens(domain, environment, kind="")` | `domain` = `network`, `security`, `storage`, `governance` (merged `_org` + environment) or `compute` with `kind` = `container-service` / `kubernetes-cluster`. Returns the values and their `sources`; returns `error` with the available options when an environment, domain or kind is missing. |
 
 ### Power `terraform-knowledge-guard` (remote HashiCorp Terraform MCP server)
 
@@ -138,7 +237,7 @@ Do not configure the AWS MCP Server or AWS API MCP server alongside it: AWS advi
 | :--- | :--- |
 | Kiro (CLI or IDE) | Everything |
 | Python 3.12 | `platform-context-engine` |
-| Terraform >= 1.5 | Validating and planning `terraform/` |
+| Terraform >= 1.5 | Validating and planning `terraform/<name>/` |
 | Node.js (`npx`) | `mcp-remote` bridge for the Terraform MCP server |
 | `dotenv` CLI in `/opt/homebrew/bin` | Loading `~/.kiro/.env` for the Terraform MCP server |
 | HCP Terraform account, **US region** (Free plan works) | Token for the remote Terraform MCP server. HCP Europe tokens are rejected. |
@@ -153,7 +252,7 @@ python3.12 -m venv .venv
 .venv/bin/pip install -r platform/mcp/requirements.txt
 
 # 2. Terraform provider for validating the generated code
-cd terraform && terraform init -backend=false && cd -
+cd terraform/garage-management && terraform init -backend=false && cd -
 ```
 
 3. Create an HCP Terraform API token (User settings → Tokens) and add it to `~/.kiro/.env`,
@@ -200,7 +299,7 @@ power-terraform-knowledge-guard-terraform-registry  local   ● running   9 tool
 power-aws-knowledge-guard-aws-knowledge             local   ● running   5 tools
 ```
 
-Test prompt: *"Check whether the `aws_s3_bucket` arguments used in terraform/s3.tf are deprecated in provider
+Test prompt: *"Check whether the `aws_s3_bucket` arguments used in terraform/garage-management/s3.tf are deprecated in provider
 5.100.0, and whether recent S3 announcements would change this design."*
 
 ### Troubleshooting
@@ -224,16 +323,46 @@ To see the Terraform bridge's own errors, run it in a terminal:
   --header 'Authorization:${HCP_TERRAFORM_AUTH_HEADER}'
 ```
 
+## Validate: the gate (`policy/`)
+
+Kiro proposes, OPA decides. Policies run on the plan JSON, with the same Design Tokens that fed generation:
+
+```bash
+.venv/bin/python platform/tools/export_tokens.py prod > build/tokens.prod.json
+terraform -chdir=terraform/<name> plan -var-file=environments/prod.tfvars -out tfplan
+terraform -chdir=terraform/<name> show -json tfplan > terraform/<name>/tfplan.json
+conftest test terraform/<name>/tfplan.json -p policy --data build/tokens.prod.json
+```
+
+| Policy | Denies |
+| :--- | :--- |
+| `s3.rego` | a bucket without public access block (all four flags), versioning as the token, SSE-KMS with the storage key, logs to the audit bucket |
+| `tags.rego` | a taggable resource without all the `governance.default_tags` keys (`tags_all`) |
+| `dynamodb.rego` | a table not encrypted with the database key, PITR or deletion protection not as the tokens |
+| `lambda.rego` | runtime, architecture or tracing not as `compute/serverless-app` |
+| `apigw.rego` | a route with `authorization_type = "NONE"` |
+
+Companion resources (versioning, encryption, ...) are linked to their bucket through `configuration` references:
+a new bucket's ID is unknown at plan time. Not visible at plan time: values computed by AWS, such as an IAM policy
+document that references a new table ARN; those stay with the building blocks, review and runtime guardrails.
+CI: `.github/workflows/iac-gate.yml`. Unit tests: `opa test policy`.
+
+## Demo (`tests/demo/`)
+
+Five tests on the garage serverless application (`ServerlessApplication`): S3 bucket, DynamoDB table, Lambda
+function, HTTP API, then the entire application in one prompt. See `tests/demo/README.md` for the 15-minute runbook.
+
 ## Current status
 
 - Both powers and `platform-context-engine` connect in Kiro CLI (checked 2026-11-08).
-- `terraform/` holds the **prod** configuration, with prod values written directly in `locals.tf`.
-- `infra-intent.md` declares `environment: "prod"`.
+- `terraform/garage-management/` holds the **prod** configuration, with prod values written directly in `locals.tf`.
+- Only the prod intent exists (`intents/garage-management/prod.md`); the dev intent is task 1.1 of the spec.
+- The `kubernetes-cluster/v1alpha1` golden path (EKS) exists with dev tokens and an example; no EKS intent yet.
 - The `garage-app` spec (all tasks open) moves those values into variables and adds
-  `terraform/environments/dev.tfvars` and `prod.tfvars`, generated from the Design Tokens, plus
+  `terraform/garage-management/environments/dev.tfvars` and `prod.tfvars`, generated from the Design Tokens, plus
   consistency tests in `tests/unit/`.
 - The provider is pinned to `~> 5.0` (installed 5.100.0) while the latest release is 6.x. Upgrading needs a
-  change to `versions.tf` and the synthesis steering rule; `terraform-knowledge-guard` can read the 6.x
+  change to `versions.tf`, the steering rule and the golden path patterns; `terraform-knowledge-guard` can read the 6.x
   upgrade guide first.
 - Until the `.tfvars` files exist, `terraform plan` asks for `container_image`, `acm_certificate_arn` and
   `alb_internal_domain_name`.

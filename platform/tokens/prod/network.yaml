@@ -1,0 +1,16 @@
+aws_region: "eu-west-1"
+vpc_id: "vpc-0999999999prod000"
+# Subnets per tier and per AZ
+subnets:
+  public:
+    eu-west-1a: "subnet-0prodpub1a"
+    eu-west-1b: "subnet-0prodpub1b"
+    eu-west-1c: "subnet-0prodpub1c"
+  private_app:
+    eu-west-1a: "subnet-0prodapp1a"
+    eu-west-1b: "subnet-0prodapp1b"
+    eu-west-1c: "subnet-0prodapp1c"
+  isolated_db:
+    eu-west-1a: "subnet-0proddata1a"
+    eu-west-1b: "subnet-0proddata1b"
+    eu-west-1c: "subnet-0proddata1c"

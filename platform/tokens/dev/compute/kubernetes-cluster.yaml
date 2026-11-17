@@ -1,0 +1,21 @@
+# Amazon EKS (golden path v1alpha1: dev only)
+control_plane_subnet_tier: "private_app"   # all AZs of the tier: EKS requires at least two
+node_subnet_tier: "private_app"
+single_az_zone: "eu-west-1a"               # node AZ when the intent asks for single-az
+node_profiles:
+  small:
+    instance_types: ["t3.large"]
+    min_size: 1
+    max_size: 3
+    desired_size: 1
+  medium:
+    instance_types: ["m6i.large"]
+    min_size: 2
+    max_size: 4
+    desired_size: 2
+  large:
+    instance_types: ["m6i.xlarge"]
+    min_size: 2
+    max_size: 6
+    desired_size: 2
+enabled_cluster_log_types: ["api", "audit", "authenticator"]

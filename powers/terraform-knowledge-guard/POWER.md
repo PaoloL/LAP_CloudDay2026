@@ -1,61 +1,63 @@
 ---
 name: "terraform-knowledge-guard"
 displayName: "Terraform Knowledge Guard"
-description: "Supera il knowledge cutoff dell'LLM su Terraform: sintassi reale e attributi deprecati del provider hashicorp/aws, letti a runtime dal Terraform Registry tramite il Terraform MCP server remoto di HashiCorp."
-keywords: ["terraform", "tf", "hcl", "provider", "hashicorp/aws", "aws_", "resource", "data source", "deprecated", "deprecato", "deprecation", "schema", "argomenti", "upgrade", "versione provider", "registry", "modulo", "iac", "knowledge cutoff"]
+description: "Overcomes the LLM knowledge cutoff on Terraform: real syntax and deprecated arguments of the hashicorp/aws provider, read at runtime from the Terraform Registry through HashiCorp's remote Terraform MCP server."
+keywords: ["terraform", "tf", "hcl", "provider", "hashicorp/aws", "aws_", "resource", "data source", "deprecated", "deprecation", "schema", "arguments", "upgrade", "provider version", "registry", "module", "iac", "knowledge cutoff"]
 author: "maverick"
 ---
 
 # Terraform Knowledge Guard
 
-Il tuo training ha un cutoff: il provider `hashicorp/aws` rilascia nuove versioni ogni settimana, aggiunge
-risorse, depreca e rimuove argomenti. Questo power ti collega al **Terraform MCP server remoto di HashiCorp**
-(`https://mcp.terraform.io/mcp`), che legge la documentazione ufficiale del Terraform Registry per la versione
-del provider che indichi.
+Your training has a cutoff: the `hashicorp/aws` provider ships new versions every week, adds resources,
+deprecates and removes arguments. This power connects you to **HashiCorp's remote Terraform MCP server**
+(`https://mcp.terraform.io/mcp`), which reads the official Terraform Registry documentation for the provider
+version you specify.
 
-**Regola d'oro: prima di scrivere il nome di una risorsa, di un argomento o di un blocco "a memoria",
-verificalo nella documentazione del Registry per la versione del provider usata dal progetto.**
+**Golden rule: before writing the name of a resource, argument or block "from memory", check it in the Registry
+documentation for the provider version the project uses.**
 
 # Onboarding
 
-## Step 1: Token HCP Terraform
-Il server remoto richiede un account HCP Terraform (va bene il piano Free) e un API token (utente o team).
-1. Crea il token: HCP Terraform -> User settings -> Tokens.
-2. Aggiungi questa riga a `~/.kiro/.env` (il valore include la parola `Bearer` e uno spazio):
+## Step 1: HCP Terraform token
+The remote server requires an HCP Terraform account (the Free plan is fine, US-region organisation) and an API
+token (user or team).
+1. Create the token: HCP Terraform -> User settings -> Tokens.
+2. Add this line to `~/.kiro/.env` (the value includes the word `Bearer` and a space):
    ```
-   HCP_TERRAFORM_AUTH_HEADER=Bearer <token>
+   HCP_TERRAFORM_AUTH_HEADER="Bearer <token>"
    ```
-3. `mcp.json` avvia `mcp-remote` tramite `dotenv`, che legge `~/.kiro/.env` e inoltra le richieste a
-   `https://mcp.terraform.io/mcp` con l'header `Authorization`. Il token non va mai scritto in `mcp.json`.
+3. `mcp.json` starts `mcp-remote` through `dotenv`, which reads `~/.kiro/.env` and forwards requests to
+   `https://mcp.terraform.io/mcp` with the `Authorization` header. Never write the token into `mcp.json`.
 
-Prerequisiti: `dotenv` (`brew install dotenv` o equivalente in `/opt/homebrew/bin`) e Node.js (`npx`).
-Se il server risponde `Authorization bearer token is required`, la riga in `~/.kiro/.env` manca o e' scritta male.
+Prerequisites: `dotenv` (in `/opt/homebrew/bin`) and Node.js (`npx`).
+If the server answers `Authorization bearer token is required`, the line in `~/.kiro/.env` is missing or wrong.
 
-## Step 2: Verifica
-In Kiro CLI esegui `/mcp` (o `/tools`): il server `terraform-registry` deve risultare connesso e mostrare
-tool come `search_providers` e `get_provider_details`.
+## Step 2: Check
+In Kiro CLI run `/mcp` (or `/tools`): the `terraform-registry` server must be connected with 9 tools,
+such as `search_providers` and `get_provider_details`.
 
-# Tool del server (`terraform-registry`)
+# Server tools (`terraform-registry`)
 
-| Tool | Quando usarlo |
+| Tool | When to use it |
 | :--- | :--- |
-| `get_latest_provider_version` | All'inizio di ogni lavoro IaC: confronta l'ultima versione di `hashicorp/aws` con quella del progetto. |
-| `search_providers` | Per trovare il documento di una risorsa, data source o guida (es. upgrade guide) e ottenere il suo ID, per una versione precisa del provider. |
-| `get_provider_details` | Per leggere la documentazione completa di quella risorsa: argomenti, blocchi, attributi esportati, note di deprecazione. |
-| `get_provider_capabilities` | Per una panoramica di cosa offre il provider (risorse, data source, funzioni). |
-| `search_modules` / `get_module_details` | Solo se l'utente chiede un modulo: le regole del workspace possono vietarli. |
+| `get_latest_provider_version` | At the start of any IaC work: compare the latest `hashicorp/aws` version with the project's. |
+| `search_providers` | Find the document of a resource, data source or guide (e.g. upgrade guide) and get its ID, for a specific provider version. |
+| `get_provider_details` | Read the full documentation of that resource: arguments, blocks, exported attributes, deprecation notes. |
+| `get_provider_capabilities` | Overview of what the provider offers (resources, data sources, functions). |
+| `search_modules` / `get_module_details` / `get_latest_module_version` | Only if the user asks for a module: the workspace rules may forbid them. |
+| `search_policies` / `get_policy_details` | Sentinel policy libraries from the Registry. |
 
-Il server remoto espone anche tool per workspace, run, team, variabili e registry privato di HCP Terraform.
-Sono disattivati in `mcp.json` (`disabledTools`): questo power serve solo a leggere la documentazione pubblica
-del Registry. Restano attivi i 9 tool del Registry pubblico, compresi `search_policies` e `get_policy_details`.
+The remote server also exposes HCP Terraform tools for workspaces, runs, teams, variables and the private
+registry. They are disabled in `mcp.json` (`disabledTools`): this power only reads the public Registry
+documentation.
 
 # Workflow steering
-- Scrivere, rivedere o aggiornare file `.tf` -> `terraform-workflow.md`
+- Writing, reviewing or upgrading `.tf` files -> `terraform-workflow.md`
 
-# Regole di comportamento
-1. Mai affidarsi alla memoria per nomi di risorse, argomenti, blocchi o valori ammessi: leggi la documentazione.
-2. Leggi sempre la documentazione della **versione del provider usata dal progetto** (da `.terraform.lock.hcl`
-   o dal vincolo in `versions.tf`), non dell'ultima: gli argomenti cambiano tra major version.
-3. Se il server non e' raggiungibile o non trova il documento, **fermati e riportalo**; non ripiegare su
-   valori ricordati e non presentarli come verificati.
-4. Nel riepilogo finale elenca i documenti consultati (risorsa + versione) e cosa NON hai potuto verificare.
+# Behaviour rules
+1. Never rely on memory for resource names, arguments, blocks or allowed values: read the documentation.
+2. Always read the documentation for the **provider version the project uses** (from `.terraform.lock.hcl` or
+   the constraint in `versions.tf`), not the latest: arguments change between major versions.
+3. If the server is not reachable or cannot find the document, **stop and report it**; do not fall back on
+   remembered values and do not present them as verified.
+4. In the final summary, list the documents consulted (resource + version) and what you could NOT verify.

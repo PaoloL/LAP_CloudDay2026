@@ -15,6 +15,7 @@ __pycache__/
 *.tfstate.*
 .terraform.tfstate.lock.info
 *.tfplan
+tfplan.json
 tfplan
 crash.log
 crash.*.log
@@ -38,3 +39,9 @@ override.tf.json
 .DS_Store
 .idea/
 .vscode/
+
+# --- Gate ---------------------------------------------------------------------
+# Token export for Conftest (python3 platform/tools/export_tokens.py <env>)
+build/
+
+Claude outputs

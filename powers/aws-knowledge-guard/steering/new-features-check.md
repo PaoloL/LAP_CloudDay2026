@@ -1,33 +1,33 @@
-# AWS: verifica di servizi e funzionalita' nuovi
+# AWS: checking new services and features
 
-Da usare quando scegli un servizio o una funzionalita' per una soluzione, quando l'utente chiede cosa c'e'
-di nuovo, o quando la tua conoscenza di un servizio potrebbe essere superata.
+Use this when you choose a service or feature for a solution, when the user asks what's new, or when your
+knowledge of a service may be out of date.
 
-## 1. Cerca gli annunci recenti
-- `search_documentation` con topic `current_awareness` e una frase specifica
-  (es. "ECS Fargate new features", "API Gateway HTTP API launch").
-- Leggi con `read_documentation` gli annunci rilevanti e annota titolo, data e URL.
-- Considera "nuovo" tutto cio' che non conoscevi o che e' stato pubblicato dopo il tuo cutoff: non scartarlo
-  perche' non lo ricordi.
+## 1. Look for recent announcements
+- `search_documentation` with topic `current_awareness` and a specific phrase
+  (e.g. "ECS Fargate new features", "API Gateway HTTP API launch").
+- Read the relevant announcements with `read_documentation` and note title, date and URL.
+- Treat as "new" anything you did not know or that was published after your cutoff: do not discard it because
+  you do not remember it.
 
-## 2. Confronta con la soluzione proposta
-Per ogni servizio scelto chiediti, e verifica nella documentazione:
-- esiste una funzionalita' recente che semplifica la soluzione o sostituisce un workaround che stavi per proporre?
-- quello che stavi per usare e' stato deprecato, rinominato o messo in fine supporto?
-- e' cambiato un limite o un default rilevante?
+## 2. Compare with the proposed solution
+For each chosen service ask yourself, and check in the documentation:
+- is there a recent feature that simplifies the solution or replaces a workaround you were about to propose?
+- has what you were about to use been deprecated, renamed or put into end of support?
+- has a relevant limit or default changed?
 
-## 3. Verifica la disponibilita' nella regione
-- `get_regional_availability` per il servizio, la funzionalita' o la risorsa CloudFormation nella regione del
-  progetto (es. `eu-west-1`).
-- Se non e' disponibile, proponi alternative (altra regione o altro servizio) e chiedi conferma all'utente.
+## 3. Check availability in the Region
+- `get_regional_availability` for the service, feature or CloudFormation resource in the project's Region
+  (e.g. `eu-west-1`).
+- If it is not available, propose alternatives (another Region or another service) and ask the user to confirm.
 
-## 4. Controlla che Terraform lo supporti
-Una funzionalita' annunciata da AWS non e' detto che sia gia' nel provider `hashicorp/aws` della versione del
-progetto. Se il power `terraform-knowledge-guard` e' attivo, verifica li' la risorsa o l'argomento; altrimenti
-segnala il rischio all'utente.
+## 4. Check that Terraform supports it
+A feature announced by AWS is not necessarily in the `hashicorp/aws` provider at the project's version yet. If the
+`terraform-knowledge-guard` power is active, check the resource or argument there; otherwise flag the risk to the
+user.
 
-## Cosa riportare
-- Annunci e pagine consultati (titolo, data, URL).
-- Novita' che cambiano la soluzione, e come.
-- Esito della verifica regionale.
-- Cosa non e' stato possibile verificare.
+## What to report
+- Announcements and pages consulted (title, date, URL).
+- News that changes the solution, and how.
+- Result of the regional check.
+- What could not be verified.

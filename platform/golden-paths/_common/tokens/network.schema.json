@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Network tokens (merge of _org + environment)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "aws_region",
+    "vpc_id",
+    "subnets"
+  ],
+  "properties": {
+    "aws_region": {
+      "type": "string",
+      "pattern": "^[a-z]{2}-[a-z]+-[0-9]$"
+    },
+    "vpc_id": {
+      "type": "string",
+      "pattern": "^vpc-[0-9a-z]+$"
+    },
+    "subnets": {
+      "description": "Subnets per tier and per AZ: { tier: { az: subnet_id } }.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public",
+        "private_app",
+        "isolated_db"
+      ],
+      "properties": {
+        "public": {
+          "$ref": "#/$defs/by_az"
+        },
+        "private_app": {
+          "$ref": "#/$defs/by_az"
+        },
+        "isolated_db": {
+          "$ref": "#/$defs/by_az"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "by_az": {
+      "type": "object",
+      "minProperties": 2,
+      "propertyNames": {
+        "pattern": "^[a-z]{2}-[a-z]+-[0-9][a-z]$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^subnet-[0-9a-z]+$"
+      }
+    }
+  }
+}

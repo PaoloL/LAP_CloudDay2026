@@ -1,0 +1,57 @@
+# Validate gate: the generator never grades its own work.
+name: iac-gate
+
+on:
+  pull_request:
+    paths: ["intents/**", "terraform/**", "policy/**", "platform/**", "tests/**"]
+
+permissions:
+  contents: read
+  id-token: write # OIDC to AWS for terraform plan
+
+jobs:
+  contracts-and-policies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml jsonschema referencing
+      - name: Intent contracts and Design Tokens
+        run: python platform/tools/validate.py
+      - name: Demo consistency
+        run: python tests/demo/check.py
+      - name: Policy unit tests
+        run: |
+          curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.62.0/conftest_0.62.0_Linux_x86_64.tar.gz | tar xz conftest
+          ./conftest verify -p policy
+
+  plan-and-gate:
+    needs: contracts-and-policies
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [garage-serverless]
+        environment: [prod]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_wrapper: false }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }} # read-only plan role (placeholder)
+          aws-region: eu-west-1
+      - name: Plan
+        working-directory: terraform/${{ matrix.app }}
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -var-file=environments/${{ matrix.environment }}.tfvars -out tfplan
+          terraform show -json tfplan > tfplan.json
+      - name: Gate (non-zero exit blocks the merge)
+        run: |
+          python platform/tools/export_tokens.py ${{ matrix.environment }} > tokens.json
+          curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.62.0/conftest_0.62.0_Linux_x86_64.tar.gz | tar xz conftest
+          ./conftest test terraform/${{ matrix.app }}/tfplan.json -p policy --data tokens.json

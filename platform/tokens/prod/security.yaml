@@ -1,0 +1,6 @@
+# Strict PCI-DSS / CIS Benchmark
+kms_keys:
+  # Dedicated customer managed keys (CMK) with yearly rotation
+  storage_key_arn: "arn:aws:kms:eu-west-1:444455556666:key/prod-pci-storage-cmk"
+  database_key_arn: "arn:aws:kms:eu-west-1:444455556666:key/prod-pci-database-cmk"
+enable_deletion_protection: true

@@ -1,0 +1,6 @@
+kms_keys:
+  # Dev uses shared KMS keys to reduce fixed costs
+  storage_key_arn: "arn:aws:kms:eu-west-1:111122223333:key/dev-shared-storage-key"
+  database_key_arn: "arn:aws:kms:eu-west-1:111122223333:key/dev-shared-db-key"
+  kubernetes_secrets_key_arn: "arn:aws:kms:eu-west-1:111122223333:key/dev-shared-k8s-secrets-key"
+enable_deletion_protection: false

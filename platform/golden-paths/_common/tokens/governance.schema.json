@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Governance tokens (merge of _org + environment)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "naming_mask",
+    "default_tags"
+  ],
+  "properties": {
+    "naming_mask": {
+      "type": "string",
+      "pattern": "\\{environment\\}.*\\{service_name\\}.*\\{resource_suffix\\}"
+    },
+    "default_tags": {
+      "type": "object",
+      "required": [
+        "Organization",
+        "Environment",
+        "ManagedBy",
+        "CostCenter"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

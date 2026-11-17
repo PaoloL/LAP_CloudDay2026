@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acme.example/golden-paths/_common/intent-common.schema.json",
+  "title": "Intent: common part",
+  "description": "Fields common to every intent, whatever the kind. Validates the YAML frontmatter of intents/<name>/<environment>.md; the Markdown body is checked by platform/tools/validate.py. Each kind schema references it with $ref and defines its own 'spec'.",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "description": "Contract version of the kind, e.g. intent.acme.io/v1. Alpha versions are allowed only in dev.",
+      "type": "string",
+      "pattern": "^intent\\.acme\\.io/v[0-9]+((alpha|beta)[0-9]+)?$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "ContainerService",
+        "KubernetesCluster",
+        "ServerlessApplication"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "environment",
+        "owner"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name in kebab-case. Matches the folders intents/<name>/ and terraform/<name>/, and is used in the naming acme-{environment}-{name}-{resource_suffix}.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+          "minLength": 3,
+          "maxLength": 32
+        },
+        "environment": {
+          "description": "Environment. Matches the file intents/<name>/<environment>.md and the folder platform/tokens/<environment>/.",
+          "type": "string",
+          "enum": [
+            "dev",
+            "staging",
+            "prod"
+          ],
+          "default": "dev"
+        },
+        "owner": {
+          "description": "Team that owns the intent: it approves the PRs that change it.",
+          "type": "string",
+          "pattern": "^team-[a-z0-9-]+$"
+        }
+      }
+    },
+    "spec": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "apiVersion": {
+            "pattern": "(alpha|beta)[0-9]+$"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "environment": {
+                "const": "dev"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

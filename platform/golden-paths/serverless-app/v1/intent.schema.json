@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acme.example/golden-paths/serverless-app/v1/intent.schema.json",
+  "title": "Intent ServerlessApplication v1",
+  "description": "Serverless application: S3 bucket, DynamoDB table, Lambda function and HTTP API. Every component is optional: absent means disabled and generates no resources. Every 'default' is the most conservative choice.",
+  "$ref": "https://acme.example/golden-paths/_common/intent-common.schema.json",
+  "unevaluatedProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "intent.acme.io/v1"
+    },
+    "kind": {
+      "const": "ServerlessApplication"
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "exposure": {
+          "description": "Who calls the API. 'public': internet clients, JWT authorizer from the tokens. 'internal': AWS callers, IAM authorization. Never unauthenticated. 'public' is a security choice that must be confirmed explicitly.",
+          "type": "string",
+          "enum": [
+            "public",
+            "internal"
+          ],
+          "default": "internal"
+        },
+        "api": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "routes"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "http",
+                "none"
+              ],
+              "default": "none"
+            },
+            "routes": {
+              "description": "REST endpoints '<METHOD> <path>', path parameters in snake_case between braces.",
+              "type": "array",
+              "uniqueItems": true,
+              "default": [],
+              "items": {
+                "type": "string",
+                "pattern": "^(GET|POST|PUT|PATCH|DELETE) (/[a-z0-9_-]+|/\\{[a-z][a-z0-9_]*\\})+$"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "type": {
+                "const": "none"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "routes": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "routes": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        "function": {
+          "description": "One Lambda function that serves CRUD operations on the listed entities, stored in the DynamoDB table.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "entities"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "entities": {
+              "description": "Entities in kebab-case, plural, e.g. 'garages'.",
+              "type": "array",
+              "uniqueItems": true,
+              "default": [],
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              }
+            },
+            "size": {
+              "description": "Memory profile: the MB come from the environment's compute/serverless-app tokens.",
+              "type": "string",
+              "enum": [
+                "small",
+                "medium",
+                "large"
+              ],
+              "default": "small"
+            }
+          },
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "entities": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "nosql": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "enabled",
+                "table_name",
+                "partition_key",
+                "sort_key"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "table_name": {
+                  "description": "Suffix of the table name in the naming mask, e.g. 'primary'.",
+                  "type": "string",
+                  "default": ""
+                },
+                "partition_key": {
+                  "type": "string",
+                  "default": ""
+                },
+                "sort_key": {
+                  "description": "Empty if the table has no sort key.",
+                  "type": "string",
+                  "default": ""
+                }
+              },
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "table_name": {
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  },
+                  "partition_key": {
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "blob": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "enabled",
+                "purpose"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "purpose": {
+                  "description": "Purpose of the bucket in kebab-case, e.g. 'static-content'. Becomes the bucket suffix in the naming mask.",
+                  "type": "string",
+                  "default": ""
+                }
+              },
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "purpose": {
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "description": "An HTTP API needs the function that serves it.",
+          "if": {
+            "required": [
+              "api"
+            ],
+            "properties": {
+              "api": {
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "const": "http"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "function"
+            ],
+            "properties": {
+              "function": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "description": "The function stores its entities in the DynamoDB table.",
+          "if": {
+            "required": [
+              "function"
+            ],
+            "properties": {
+              "function": {
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "storage"
+            ],
+            "properties": {
+              "storage": {
+                "required": [
+                  "nosql"
+                ],
+                "properties": {
+                  "nosql": {
+                    "properties": {
+                      "enabled": {
+                        "const": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

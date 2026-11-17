@@ -1,0 +1,362 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.8",
+  "variables": {
+    "environment": {
+      "value": "prod"
+    },
+    "aws_region": {
+      "value": "eu-west-1"
+    },
+    "naming_mask": {
+      "value": "acme-{environment}-{service_name}-{resource_suffix}"
+    },
+    "default_tags": {
+      "value": {
+        "Organization": "AcmeCorp",
+        "ManagedBy": "Kiro-IaI",
+        "Environment": "prod",
+        "CostCenter": "Fleet-Core-Prod",
+        "ComplianceScope": "pci-dss"
+      }
+    },
+    "storage_kms_key_arn": {
+      "value": "arn:aws:kms:eu-west-1:444455556666:key/prod-pci-storage-cmk"
+    },
+    "s3_versioning_status": {
+      "value": "Enabled"
+    },
+    "s3_force_destroy": {
+      "value": false
+    },
+    "audit_log_bucket": {
+      "value": "acme-prod-security-audit-logs"
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.static_content",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "static_content",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "bucket": "acme-prod-garage-serverless-static-content",
+          "force_destroy": false,
+          "tags": null,
+          "tags_all": {
+            "Organization": "AcmeCorp",
+            "ManagedBy": "Kiro-IaI",
+            "Environment": "prod",
+            "CostCenter": "Fleet-Core-Prod",
+            "ComplianceScope": "pci-dss"
+          },
+          "timeouts": null
+        },
+        "after_unknown": {
+          "arn": true,
+          "bucket_domain_name": true,
+          "id": true,
+          "region": true,
+          "tags_all": {}
+        },
+        "before_sensitive": false,
+        "after_sensitive": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.static_content",
+      "mode": "managed",
+      "type": "aws_s3_bucket_public_access_block",
+      "name": "static_content",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "block_public_acls": true,
+          "block_public_policy": true,
+          "ignore_public_acls": true,
+          "restrict_public_buckets": true
+        },
+        "after_unknown": {
+          "bucket": true,
+          "id": true
+        },
+        "before_sensitive": false,
+        "after_sensitive": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket_versioning.static_content",
+      "mode": "managed",
+      "type": "aws_s3_bucket_versioning",
+      "name": "static_content",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "expected_bucket_owner": null,
+          "mfa": null,
+          "versioning_configuration": [
+            {
+              "status": "Enabled"
+            }
+          ]
+        },
+        "after_unknown": {
+          "bucket": true,
+          "id": true,
+          "versioning_configuration": [
+            {
+              "mfa_delete": true
+            }
+          ]
+        },
+        "before_sensitive": false,
+        "after_sensitive": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket_server_side_encryption_configuration.static_content",
+      "mode": "managed",
+      "type": "aws_s3_bucket_server_side_encryption_configuration",
+      "name": "static_content",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "expected_bucket_owner": null,
+          "rule": [
+            {
+              "apply_server_side_encryption_by_default": [
+                {
+                  "kms_master_key_id": "arn:aws:kms:eu-west-1:444455556666:key/prod-pci-storage-cmk",
+                  "sse_algorithm": "aws:kms"
+                }
+              ],
+              "bucket_key_enabled": true
+            }
+          ]
+        },
+        "after_unknown": {
+          "bucket": true,
+          "id": true,
+          "rule": [
+            {
+              "apply_server_side_encryption_by_default": [
+                {}
+              ]
+            }
+          ]
+        },
+        "before_sensitive": false,
+        "after_sensitive": {}
+      }
+    },
+    {
+      "address": "aws_s3_bucket_logging.static_content",
+      "mode": "managed",
+      "type": "aws_s3_bucket_logging",
+      "name": "static_content",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "expected_bucket_owner": null,
+          "target_bucket": "acme-prod-security-audit-logs",
+          "target_grant": [],
+          "target_object_key_format": [],
+          "target_prefix": "s3/acme-prod-garage-serverless-static-content/"
+        },
+        "after_unknown": {
+          "bucket": true,
+          "id": true,
+          "target_grant": [],
+          "target_object_key_format": []
+        },
+        "before_sensitive": false,
+        "after_sensitive": {}
+      }
+    }
+  ],
+  "configuration": {
+    "provider_config": {
+      "aws": {
+        "name": "aws",
+        "full_name": "registry.terraform.io/hashicorp/aws",
+        "version_constraint": "~> 5.0",
+        "expressions": {
+          "region": {
+            "references": [
+              "var.aws_region"
+            ]
+          },
+          "default_tags": [
+            {
+              "tags": {
+                "references": [
+                  "var.default_tags"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_s3_bucket.static_content",
+          "mode": "managed",
+          "type": "aws_s3_bucket",
+          "name": "static_content",
+          "provider_config_key": "aws",
+          "expressions": {
+            "bucket": {
+              "references": [
+                "local.name_prefix"
+              ]
+            },
+            "force_destroy": {
+              "references": [
+                "var.s3_force_destroy"
+              ]
+            }
+          },
+          "schema_version": 0
+        },
+        {
+          "address": "aws_s3_bucket_public_access_block.static_content",
+          "mode": "managed",
+          "type": "aws_s3_bucket_public_access_block",
+          "name": "static_content",
+          "provider_config_key": "aws",
+          "expressions": {
+            "bucket": {
+              "references": [
+                "aws_s3_bucket.static_content.id",
+                "aws_s3_bucket.static_content"
+              ]
+            },
+            "block_public_acls": {
+              "constant_value": true
+            },
+            "block_public_policy": {
+              "constant_value": true
+            },
+            "ignore_public_acls": {
+              "constant_value": true
+            },
+            "restrict_public_buckets": {
+              "constant_value": true
+            }
+          },
+          "schema_version": 0
+        },
+        {
+          "address": "aws_s3_bucket_versioning.static_content",
+          "mode": "managed",
+          "type": "aws_s3_bucket_versioning",
+          "name": "static_content",
+          "provider_config_key": "aws",
+          "expressions": {
+            "bucket": {
+              "references": [
+                "aws_s3_bucket.static_content.id",
+                "aws_s3_bucket.static_content"
+              ]
+            },
+            "versioning_configuration": [
+              {
+                "status": {
+                  "references": [
+                    "var.s3_versioning_status"
+                  ]
+                }
+              }
+            ]
+          },
+          "schema_version": 0
+        },
+        {
+          "address": "aws_s3_bucket_server_side_encryption_configuration.static_content",
+          "mode": "managed",
+          "type": "aws_s3_bucket_server_side_encryption_configuration",
+          "name": "static_content",
+          "provider_config_key": "aws",
+          "expressions": {
+            "bucket": {
+              "references": [
+                "aws_s3_bucket.static_content.id",
+                "aws_s3_bucket.static_content"
+              ]
+            },
+            "rule": [
+              {
+                "apply_server_side_encryption_by_default": [
+                  {
+                    "kms_master_key_id": {
+                      "references": [
+                        "var.storage_kms_key_arn"
+                      ]
+                    },
+                    "sse_algorithm": {
+                      "constant_value": "aws:kms"
+                    }
+                  }
+                ],
+                "bucket_key_enabled": {
+                  "constant_value": true
+                }
+              }
+            ]
+          },
+          "schema_version": 0
+        },
+        {
+          "address": "aws_s3_bucket_logging.static_content",
+          "mode": "managed",
+          "type": "aws_s3_bucket_logging",
+          "name": "static_content",
+          "provider_config_key": "aws",
+          "expressions": {
+            "bucket": {
+              "references": [
+                "aws_s3_bucket.static_content.id",
+                "aws_s3_bucket.static_content"
+              ]
+            },
+            "target_bucket": {
+              "references": [
+                "var.audit_log_bucket"
+              ]
+            },
+            "target_prefix": {
+              "references": [
+                "local.name_prefix"
+              ]
+            }
+          },
+          "schema_version": 0
+        }
+      ]
+    }
+  }
+}

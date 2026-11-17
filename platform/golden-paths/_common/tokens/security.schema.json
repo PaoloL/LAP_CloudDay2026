@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Security tokens (merge of _org + environment)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kms_keys",
+    "tls_policy",
+    "enable_deletion_protection"
+  ],
+  "properties": {
+    "kms_keys": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "storage_key_arn",
+        "database_key_arn"
+      ],
+      "properties": {
+        "storage_key_arn": {
+          "$ref": "#/$defs/kms_arn"
+        },
+        "database_key_arn": {
+          "$ref": "#/$defs/kms_arn"
+        },
+        "kubernetes_secrets_key_arn": {
+          "$ref": "#/$defs/kms_arn"
+        }
+      }
+    },
+    "tls_policy": {
+      "type": "string",
+      "pattern": "^ELBSecurityPolicy-"
+    },
+    "enable_deletion_protection": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "kms_arn": {
+      "type": "string",
+      "pattern": "^arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/.+$"
+    }
+  }
+}

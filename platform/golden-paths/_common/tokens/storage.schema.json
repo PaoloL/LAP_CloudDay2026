@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Storage tokens (merge of _org + environment)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "s3",
+    "dynamodb"
+  ],
+  "properties": {
+    "s3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "force_destroy",
+        "versioning_status",
+        "audit_log_target_bucket"
+      ],
+      "properties": {
+        "force_destroy": {
+          "type": "boolean"
+        },
+        "versioning_status": {
+          "enum": [
+            "Enabled",
+            "Suspended"
+          ]
+        },
+        "audit_log_target_bucket": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    },
+    "dynamodb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "billing_mode",
+        "point_in_time_recovery"
+      ],
+      "properties": {
+        "billing_mode": {
+          "enum": [
+            "PAY_PER_REQUEST"
+          ]
+        },
+        "point_in_time_recovery": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

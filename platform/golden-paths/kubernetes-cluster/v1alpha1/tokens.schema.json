@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "compute/kubernetes-cluster tokens (Amazon EKS)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "control_plane_subnet_tier",
+    "node_subnet_tier",
+    "single_az_zone",
+    "node_profiles",
+    "enabled_cluster_log_types"
+  ],
+  "properties": {
+    "control_plane_subnet_tier": {
+      "description": "network.subnets tier used by the control plane: all of its AZs (EKS requires at least two).",
+      "enum": [
+        "private_app"
+      ]
+    },
+    "node_subnet_tier": {
+      "enum": [
+        "private_app"
+      ]
+    },
+    "single_az_zone": {
+      "description": "AZ used for the nodes when the intent asks for node_topology: single-az. Must exist in the node tier.",
+      "type": "string",
+      "pattern": "^[a-z]{2}-[a-z]+-[0-9][a-z]$"
+    },
+    "node_profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "properties": {
+        "small": {
+          "$ref": "#/$defs/profile"
+        },
+        "medium": {
+          "$ref": "#/$defs/profile"
+        },
+        "large": {
+          "$ref": "#/$defs/profile"
+        }
+      }
+    },
+    "enabled_cluster_log_types": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "api",
+          "audit",
+          "authenticator",
+          "controllerManager",
+          "scheduler"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instance_types",
+        "min_size",
+        "max_size",
+        "desired_size"
+      ],
+      "properties": {
+        "instance_types": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+\\.[a-z0-9]+$"
+          }
+        },
+        "min_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "desired_size": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
